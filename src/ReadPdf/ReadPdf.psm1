@@ -4,6 +4,10 @@ class PdfContent {
     [void]AddPage([string]$Page) {
 	$this.Pages += $Page
     }
+
+    [string]GetText() {
+	return $this.Pages -join "`n"
+    }
  }
 
 # Transforms all pages of the pdf to png files and places them into the temp folder
@@ -20,7 +24,7 @@ function Invoke-PdfToPng {
     )
 
     if ([String]::IsNullOrEmpty($Options)) {
-	$Options = "-r 300 -gray -aa yes"
+	$Options = "-r 400 -gray -aa yes"
     }
     
     $temp_folder = $env:TEMP
@@ -52,7 +56,7 @@ function Create-PdfWithTesseract {
     )
 
     if ([String]::IsNullOrEmpty($Options)) {
-	$Options = "--psm 11"
+	$Options = "--psm 11 -c preserve_interword_spaces=1"
     }
 
     $png_item = Get-ChildItem -Path $Path
@@ -66,7 +70,7 @@ function Create-PdfWithTesseract {
     $pdf_name = "$pdf_base_name.pdf"
 
     # try to create the pdf
-    Invoke-Expression "tesseract.exe $Path $pdf_base_name $Options pdf"
+    Invoke-Expression "tesseract.exe $Path $pdf_base_name $Options pdf" | Out-Null
 
     if (-not (Test-Path -Path $pdf_name)) {
 	throw "Pdf '$pdf_name' not created"
@@ -88,7 +92,7 @@ function Invoke-PdfToText {
     )
 
     if ([String]::IsNullOrEmpty($Options)) {
-	$Options = "-layout"
+	$Options = "-layout -clip"
     }
     
     $text = Invoke-Expression "pdftotext.exe -f $Page -l $Page $Options '$Path' -"

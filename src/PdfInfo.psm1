@@ -1,3 +1,24 @@
+$ConvertDict = @{
+    "pages" = { param($v) [int]::Parse($v) };
+    "moddate" = { param($v) Get-Date $v };
+    "creationdate" = { param($v) Get-Date $v };
+    "tagged" = { param($v) $v -ieq "yes" };
+    "encrypted" = { param($v) $v -ieq "yes" };
+    "optimized" = { param($v) $v -ieq "yes" };
+}
+
+function Convert-Value {
+    param($Key, $Value)
+    try {
+	if ($ConvertDict.ContainsKey($key.ToLower())) {
+	    return $ConvertDict[$key].invoke($value)
+	}
+	return $value
+    } catch {
+	return $value
+    }
+}
+
 function Get-PdfInfo {
     param(
 	[Parameter(Mandatory=$true)]
@@ -18,7 +39,7 @@ function Get-PdfInfo {
 	throw "File is not a pdf"
     }
 
-    $output_lines = Invoke-Expression "pdfinfo.exe '$Path'"
+    $output_lines = Invoke-Expression "pdfinfo.exe -rawdates '$Path'"
 
     $result = @{};
 
@@ -28,9 +49,7 @@ function Get-PdfInfo {
 	if ($elements.Count -eq 2) {
 	    $key = $elements[0].ToLower() -replace " ", "_"
 	    $value = $elements[1].Trim()
-	    if ($key -eq "pages") {
-		$value = [int]::Parse($value)
-	    }
+	    $value = Convert-Value -Key $key -Value $value
 	    $result.Add($key, $value)
 	}
     }
